@@ -153,8 +153,23 @@ func (g *ghClient) assignCopilot(ctx context.Context, prNodeID string) error {
 	return nil
 }
 
-// getCopilotAgentID finds the Copilot agent's node ID via suggestedActors GraphQL query.
+// getCopilotAgentID finds the Copilot agent's node ID.
+// First tries suggestedActors query, then falls back to direct user lookup.
 func (g *ghClient) getCopilotAgentID(ctx context.Context) (string, error) {
+	// Try suggestedActors first (works with user tokens / PATs)
+	if id, err := g.getCopilotIDFromSuggestedActors(ctx); err == nil && id != "" {
+		return id, nil
+	}
+
+	// Fallback: look up copilot-swe-agent directly (works with App installation tokens)
+	if id, err := g.getCopilotIDFromUserLookup(ctx); err == nil && id != "" {
+		return id, nil
+	}
+
+	return "", fmt.Errorf("copilot agent not found; ensure Copilot Coding Agent is enabled for this repository")
+}
+
+func (g *ghClient) getCopilotIDFromSuggestedActors(ctx context.Context) (string, error) {
 	query := `query($owner: String!, $name: String!) {
 		repository(owner: $owner, name: $name) {
 			suggestedActors(capabilities: [CAN_BE_ASSIGNED], first: 100) {
@@ -162,6 +177,7 @@ func (g *ghClient) getCopilotAgentID(ctx context.Context) (string, error) {
 					login
 					__typename
 					... on Bot { id }
+					... on User { id }
 				}
 			}
 		}
@@ -187,12 +203,11 @@ func (g *ghClient) getCopilotAgentID(ctx context.Context) (string, error) {
 		} `json:"errors"`
 	}
 	if err := g.graphql(ctx, query, variables, &result); err != nil {
-		return "", fmt.Errorf("failed to query suggested actors: %w", err)
+		return "", err
 	}
 	if len(result.Errors) > 0 {
-		return "", fmt.Errorf("GraphQL error querying actors: %s", result.Errors[0].Message)
+		return "", fmt.Errorf("%s", result.Errors[0].Message)
 	}
-
 	for _, node := range result.Data.Repository.SuggestedActors.Nodes {
 		if node.Login == "copilot-swe-agent" || node.Login == "copilot" {
 			if node.ID != "" {
@@ -200,7 +215,35 @@ func (g *ghClient) getCopilotAgentID(ctx context.Context) (string, error) {
 			}
 		}
 	}
-	return "", fmt.Errorf("copilot agent not found in suggested actors; ensure Copilot Coding Agent is enabled for this repository")
+	return "", fmt.Errorf("not found in suggested actors")
+}
+
+func (g *ghClient) getCopilotIDFromUserLookup(ctx context.Context) (string, error) {
+	query := `query($login: String!) {
+		user(login: $login) {
+			id
+		}
+	}`
+	variables := map[string]any{
+		"login": "copilot-swe-agent",
+	}
+	var result struct {
+		Data struct {
+			User struct {
+				ID string `json:"id"`
+			} `json:"user"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	if err := g.graphql(ctx, query, variables, &result); err != nil {
+		return "", err
+	}
+	if len(result.Errors) > 0 {
+		return "", fmt.Errorf("%s", result.Errors[0].Message)
+	}
+	return result.Data.User.ID, nil
 }
 
 // graphql executes a GraphQL query/mutation against the GitHub API.
