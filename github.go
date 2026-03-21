@@ -1,8 +1,11 @@
 package ghsummon
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -12,9 +15,10 @@ import (
 )
 
 type ghClient struct {
-	client *github.Client
-	owner  string
-	repo   string
+	client     *github.Client
+	httpClient *http.Client
+	owner      string
+	repo       string
 }
 
 func newGHClient(ctx context.Context, token, ownerRepo string) (*ghClient, error) {
@@ -29,9 +33,10 @@ func newGHClient(ctx context.Context, token, ownerRepo string) (*ghClient, error
 	rateLimitClient := github_ratelimit.NewClient(httpClient.Transport)
 	client := github.NewClient(rateLimitClient)
 	return &ghClient{
-		client: client,
-		owner:  parts[0],
-		repo:   parts[1],
+		client:     client,
+		httpClient: rateLimitClient,
+		owner:      parts[0],
+		repo:       parts[1],
 	}, nil
 }
 
@@ -96,8 +101,8 @@ func (g *ghClient) createEmptyCommitAndBranch(ctx context.Context, baseBranch, b
 	return nil
 }
 
-// createPR creates a pull request and returns its number.
-func (g *ghClient) createPR(ctx context.Context, baseBranch, branch, title, body string) (int, error) {
+// createPR creates a pull request and returns its number and node ID.
+func (g *ghClient) createPR(ctx context.Context, baseBranch, branch, title, body string) (int, string, error) {
 	pr, _, err := g.client.PullRequests.Create(ctx, g.owner, g.repo, &github.NewPullRequest{
 		Title: github.Ptr(title),
 		Head:  github.Ptr(branch),
@@ -105,18 +110,130 @@ func (g *ghClient) createPR(ctx context.Context, baseBranch, branch, title, body
 		Body:  github.Ptr(body),
 	})
 	if err != nil {
-		return 0, fmt.Errorf("failed to create PR: %w", err)
+		return 0, "", fmt.Errorf("failed to create PR: %w", err)
 	}
-	return pr.GetNumber(), nil
+	return pr.GetNumber(), pr.GetNodeID(), nil
 }
 
-// assignCopilot adds "copilot" as an assignee to the PR (via Issues API).
-func (g *ghClient) assignCopilot(ctx context.Context, prNumber int) error {
-	_, _, err := g.client.Issues.AddAssignees(ctx, g.owner, g.repo, prNumber, []string{"copilot"})
+// assignCopilot assigns the Copilot Coding Agent to a PR via GraphQL API.
+// The REST API silently ignores bot assignees, so GraphQL is required.
+func (g *ghClient) assignCopilot(ctx context.Context, prNodeID string) error {
+	agentID, err := g.getCopilotAgentID(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to assign copilot to PR #%d: %w", prNumber, err)
+		return err
+	}
+
+	mutation := `mutation($assignableId: ID!, $assigneeIds: [ID!]!) {
+		addAssigneesToAssignable(input: {assignableId: $assignableId, assigneeIds: $assigneeIds}) {
+			assignable { __typename }
+		}
+	}`
+	variables := map[string]any{
+		"assignableId": prNodeID,
+		"assigneeIds":  []string{agentID},
+	}
+	var result struct {
+		Data struct {
+			AddAssigneesToAssignable struct {
+				Assignable struct {
+					TypeName string `json:"__typename"`
+				} `json:"assignable"`
+			} `json:"addAssigneesToAssignable"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	if err := g.graphql(ctx, mutation, variables, &result); err != nil {
+		return fmt.Errorf("failed to assign copilot: %w", err)
+	}
+	if len(result.Errors) > 0 {
+		return fmt.Errorf("GraphQL error assigning copilot: %s", result.Errors[0].Message)
 	}
 	return nil
+}
+
+// getCopilotAgentID finds the Copilot agent's node ID via suggestedActors GraphQL query.
+func (g *ghClient) getCopilotAgentID(ctx context.Context) (string, error) {
+	query := `query($owner: String!, $name: String!) {
+		repository(owner: $owner, name: $name) {
+			suggestedActors(capabilities: [CAN_BE_ASSIGNED], first: 100) {
+				nodes {
+					login
+					__typename
+					... on Bot { id }
+				}
+			}
+		}
+	}`
+	variables := map[string]any{
+		"owner": g.owner,
+		"name":  g.repo,
+	}
+	var result struct {
+		Data struct {
+			Repository struct {
+				SuggestedActors struct {
+					Nodes []struct {
+						Login    string `json:"login"`
+						TypeName string `json:"__typename"`
+						ID       string `json:"id"`
+					} `json:"nodes"`
+				} `json:"suggestedActors"`
+			} `json:"repository"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	if err := g.graphql(ctx, query, variables, &result); err != nil {
+		return "", fmt.Errorf("failed to query suggested actors: %w", err)
+	}
+	if len(result.Errors) > 0 {
+		return "", fmt.Errorf("GraphQL error querying actors: %s", result.Errors[0].Message)
+	}
+
+	for _, node := range result.Data.Repository.SuggestedActors.Nodes {
+		if node.Login == "copilot-swe-agent" || node.Login == "copilot" {
+			if node.ID != "" {
+				return node.ID, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("copilot agent not found in suggested actors; ensure Copilot Coding Agent is enabled for this repository")
+}
+
+// graphql executes a GraphQL query/mutation against the GitHub API.
+func (g *ghClient) graphql(ctx context.Context, query string, variables map[string]any, result any) error {
+	body := map[string]any{
+		"query":     query,
+		"variables": variables,
+	}
+	bodyJSON, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.github.com/graphql", bytes.NewReader(bodyJSON))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := g.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("GraphQL request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+	return json.Unmarshal(respBody, result)
 }
 
 // postCopilotComment posts an @copilot comment on the PR to trigger the Coding Agent.
