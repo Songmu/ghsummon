@@ -78,7 +78,6 @@ A **fine-grained PAT** is required for Copilot Coding Agent assignment. GitHub A
 
 Create a fine-grained PAT with these repository permissions:
 - `Contents`: Read and Write
-- `Issues`: Read and Write
 - `Pull requests`: Read and Write
 
 Store it as `secrets.GHSUMMON_TOKEN` in your repository settings.
