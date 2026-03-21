@@ -7,7 +7,7 @@ inputs:
     required: false
     default: "v0.0.0"
   token:
-    description: "GitHub token for API calls and git operations. A fine-grained PAT with contents:write, pull_requests:write, issues:write is required for Copilot agent assignment. GitHub App installation tokens cannot assign Copilot (see https://github.com/cli/cli/issues/11362)."
+    description: "GitHub token for API calls and git operations. See README for details."
     required: true
 runs:
   using: "composite"

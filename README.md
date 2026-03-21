@@ -73,44 +73,24 @@ jobs:
 
 ### Token Requirements
 
-A **fine-grained PAT** is required for Copilot Coding Agent assignment. GitHub App installation tokens cannot assign Copilot to PRs ([cli/cli#11362](https://github.com/cli/cli/issues/11362)).
+Copilot Coding Agent assignment via the API requires a **user token** (personal access token or GitHub App user-to-server token). GitHub App installation tokens and `GITHUB_TOKEN` cannot assign Copilot to PRs.
 
-Create a fine-grained PAT with these repository permissions:
+See: [Assigning an issue to Copilot via the GitHub API](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/create-a-pr#assigning-an-issue-to-copilot-via-the-github-api)
+
+> Make sure you're authenticating with the API using a user token, for example a personal access token or a GitHub App user-to-server token.
+
+For GitHub Actions, create a **fine-grained PAT** with these repository permissions:
 - `Contents`: Read and Write
 - `Pull requests`: Read and Write
 
 Store it as `secrets.GHSUMMON_TOKEN` in your repository settings.
 
-> ⚠️ `GITHUB_TOKEN` cannot trigger Copilot due to recursive workflow prevention. GitHub App installation tokens cannot assign the Copilot agent as an assignee.
-
-### Minimal `copilot-setup-steps.yml`
-
-```yaml
-name: "Copilot Setup Steps"
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
-  pull_request:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
-
-jobs:
-  copilot-setup-steps:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v5
-```
-
 ### Action Inputs
 
-| Input | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `token` | Yes | `github.token` | GitHub token used for API calls and git operations |
-| `version` | No | `v0.0.0` | Version of ghsummon to install |
+| Input | Required | Description |
+|-------|----------|-------------|
+| `token` | Yes | Fine-grained PAT (see above) |
+| `version` | No | Version of ghsummon to install (default: latest) |
 
 ### Action Outputs
 
