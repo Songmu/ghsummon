@@ -21,8 +21,8 @@
 5. ブランチ `ghsummon-<filepath>` の存在チェック（排他制御）
    - 存在する場合 → スキップ（既に作業中）
 5. Git Data APIで空コミット作成 → ブランチ作成
-6. PR作成（タイトル: "Research: <filepath>"、本文にプロンプト+指示）
-7. copilot を PR の assignee に設定
+6. PR作成（タイトル: "ghsummon: <filepath>"、本文にプロンプト+指示）
+7. copilot を PR の assignee に設定（GraphQL API + `GraphQL-Features: issues_copilot_assignment_api_support` ヘッダー）
 8. PRに @copilot コメント投稿（プロンプト内容+指示テンプレート）
 9. Copilot Coding Agentが起動、PRブランチに直接コミット追加
    - 対象ファイルの `@copilot <prompt>` 部分を調査結果で上書き
@@ -105,27 +105,28 @@ func setOutput(name, value string) error {
 >
 > 公式ドキュメントでは `@copilot` コメントで「child PR」が作成されると記載されているが、
 > PR の **assignee に `copilot` を設定** した上で `@copilot` コメントすると、
-> **子PRではなくPRブランチに直接コミットされる**挙動が確認されている。
-> （参考: [Songmu/skillsmith#3](https://github.com/Songmu/skillsmith/pull/3) — 30コミット、複数回の反復作業を同一ブランチ上で実施）
+> **子PRではなくPRブランチに直接コミットされる**挙動となるので、これをメイン方式とする。
 
 ### ghsummon のトリガーフロー
 
 ```
 1. PR作成（Git Data API）
-2. copilot を PR の assignee に設定（REST API）
+2. copilot を PR の assignee に設定（GraphQL API）
 3. PR に @copilot コメント投稿（指示テンプレート）
 4. Copilot が PR ブランチに直接コミット
 ```
 
-### PR assignee の設定（REST API）
+### PR assignee の設定（GraphQL API）
 
-```bash
-curl -X POST \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Accept: application/vnd.github+json" \
-  https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/assignees \
-  -d '{"assignees":["copilot"]}'
-```
+Copilot Coding Agent の assign には **user token**（PAT または GitHub App user-to-server token）が必要。GitHub App installation token や `GITHUB_TOKEN` では assign できない。
+
+参考: [Assigning an issue to Copilot via the GitHub API](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/create-a-pr#assigning-an-issue-to-copilot-via-the-github-api)
+
+> Make sure you're authenticating with the API using a user token, for example a personal access token or a GitHub App user-to-server token.
+
+1. `suggestedActors(capabilities: [CAN_BE_ASSIGNED])` で `copilot-swe-agent` の node ID を取得
+2. `addAssigneesToAssignable` mutation で PR に assign
+3. リクエストには `GraphQL-Features: issues_copilot_assignment_api_support` ヘッダーが必須
 
 ### PRコメントでのトリガー（REST API）
 
@@ -143,11 +144,11 @@ curl -X POST \
 
 | 方式                       | 必要な権限                                                      |
 | ------------------------ | ---------------------------------------------------------- |
-| **GitHub App Token**（推奨） | `issues: write`, `pull_requests: write`, `contents: write` |
-| **PAT (fine-grained)**   | `issues:write`, `pull_requests:write`, `contents:write`    |
+| **PAT (fine-grained)**（推奨） | `contents:write`, `pull_requests:write`    |
+| **GitHub App Token**     | ⚠️ Copilot assign ができない（user token が必要） |
 | **`GITHUB_TOKEN`**       | ⚠️ 再帰防止でCopilotトリガーが動かない                                   |
 
-> `GITHUB_TOKEN` でトリガーしたイベントは追加のワークフロー起動を防ぐ仕様がある。確実にトリガーするには **GitHub App token** (`actions/create-github-app-token`) の使用を推奨。
+> Copilot Coding Agent の assign には **user token** が必要。GitHub App installation token では `suggestedActors` クエリが `copilot-swe-agent` を返さず、assign が機能しない。GitHub Actions 環境では **fine-grained PAT** を `secrets` に格納して使用する。
 
 ### 前提条件
 
@@ -217,10 +218,10 @@ jobs:
 
 ブランチ名: `ghsummon-<normalized-filepath>`
 
-1. `./` プレフィックス削除
-2. パスセパレータを `/` に統一
+1. `filepath.Clean()` でパスを正規化（`./` 削除、`..` 解決、末尾 `/` 削除）
+2. `filepath.ToSlash()` でパスセパレータを `/` に統一
 3. 拡張子はそのまま保持（将来 `.md` 以外にも対応するため）
-4. ブランチ名不安全文字（空白、`~`, `^`, `:`, `?`, `*`, `[`, `\` 等）を含む場合 → パス全体をMD5ハッシュ化
+4. ブランチ名不安全文字（空白、`~`, `^`, `:`, `?`, `*`, `[`, `\` 等、非ASCII文字）を含む場合 → パス全体をMD5ハッシュ化
 
 例:
 - `notes/memo.md` → `ghsummon-notes/memo.md`
@@ -252,36 +253,25 @@ with your research results.
 - Search the web for up-to-date information when needed
 ```
 
-## リスクと検証事項
-
-### ⚠️ PRコメント `@copilot` でのCoding Agent発動
-
-PR上の `@copilot` メンションが **Coding Agent**（コード変更）として動作するか、**Code Review**（レビューのみ）として動作するかは **要E2E検証**。
-
-**フォールバック案**: Issue駆動に切り替え
-- Issueを作成 → `copilot` をアサイン → Agent自動PR作成
-- 排他制御: Issueラベル `ghsummon` + タイトルにファイルパスを含める
-- Issue検索API (`label:ghsummon <filepath> is:open`) で重複チェック
-
-
-## リポジトリ構成案
+## リポジトリ構成
 
 ```
 github.com/Songmu/ghsummon/
 ├── cmd/ghsummon/main.go     ← 薄いエントリーポイント
-├── cli.go                   ← CLI引数パース → Run()
-├── ghsummon.go              ← コアロジック
+├── ghsummon.go              ← CLI引数パース + コアロジック
 ├── parser.go                ← @copilot パターンのパース
 ├── parser_test.go
-├── github.go                ← GitHub API クライアント（go-github）
-├── branch.go                ← ブランチ名生成・正規化・排他チェック
+├── diff.go                  ← git diff解析・プロンプト検出
+├── diff_test.go
+├── github.go                ← GitHub API クライアント（go-github + GraphQL）
+├── branch.go                ← ブランチ名生成・正規化
 ├── branch_test.go
 ├── action.yml               ← composite action定義
 ├── install.sh               ← バイナリDLスクリプト
 ├── go.mod / go.sum
 ├── Makefile
 ├── README.md
-└── testdata/
+└── SKETCH.md                ← 設計メモ（本ファイル）
 ```
 
 ## 利用イメージ
@@ -304,30 +294,11 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/create-github-app-token@v2
-        id: app-token
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: Songmu/ghsummon@v0
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        with:
+          token: ${{ secrets.GHSUMMON_TOKEN }}
 ```
 
-## TODO
-
-1. 新リポジトリの作成
-2. Go CLIスキャフォールド（go mod init, cmd/main.go, Makefile）
-3. `@copilot <prompt>` パーサー実装 + テスト
-4. git diff解析ロジック
-5. ブランチ名正規化 + 排他チェック + テスト
-6. GitHub API連携（空コミット、ブランチ作成、PR作成、@copilotコメント）
-7. CLI統合（引数、環境変数、エラーハンドリング、GITHUB_OUTPUT）
-8. action.yml作成
-9. E2Eテスト（PRコメント@copilotでCoding Agent発動検証）
-10. フォールバック実装（Issue駆動切り替え）
-11. README整備
-12. 初回リリース
 
 ## Appendix
 
