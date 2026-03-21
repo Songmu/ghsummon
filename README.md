@@ -129,7 +129,7 @@ ghsummon uses branch-name-based exclusion. For each file with an `@copilot` dire
 
 ## Similar solutions and inspirations
 
-@copilot Please look for tools or ideas similar to ghsummon!!
+@copilot Please look for tools or ideas similar to ghsummon!!!
 
 
 ## Author
