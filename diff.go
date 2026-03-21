@@ -16,8 +16,9 @@ const emptyTreeHash = "4b825dc642cb6eb9a060e54bf899d15f13a88e14"
 
 // detectShallowAndDeepen checks if the repo is a shallow clone and deepens it if needed.
 func detectShallowAndDeepen(ctx context.Context) error {
-	if _, err := os.Stat(".git/shallow"); err != nil {
-		return nil // not shallow
+	out, err := exec.CommandContext(ctx, "git", "rev-parse", "--is-shallow-repository").Output()
+	if err != nil || strings.TrimSpace(string(out)) != "true" {
+		return nil // not shallow or unable to determine
 	}
 	cmd := exec.CommandContext(ctx, "git", "fetch", "--deepen=1")
 	cmd.Stdout = os.Stderr
