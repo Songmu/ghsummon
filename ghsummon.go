@@ -7,8 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
-	"strings"
 )
 
 const cmdName = "ghsummon"
@@ -59,7 +57,7 @@ func run(ctx context.Context, outStream, errStream io.Writer) error {
 	}
 	if len(prompts) == 0 {
 		log.Println("no @copilot prompts detected")
-		return setOutputs(0, nil)
+		return nil
 	}
 
 	gh, err := newGHClient(ctx, token, ownerRepo)
@@ -78,7 +76,6 @@ func run(ctx context.Context, outStream, errStream io.Writer) error {
 		filePrompts[p.FilePath] = append(filePrompts[p.FilePath], p)
 	}
 
-	var prNumbers []int
 	for filePath, fps := range filePrompts {
 		branch := BranchName(filePath)
 
@@ -126,33 +123,8 @@ func run(ctx context.Context, outStream, errStream io.Writer) error {
 			return err
 		}
 		log.Printf("posted @copilot comment on PR #%d\n", prNumber)
-
-		prNumbers = append(prNumbers, prNumber)
 	}
 
-	return setOutputs(len(prNumbers), prNumbers)
-}
-
-// setOutputs writes results to GITHUB_OUTPUT if available.
-func setOutputs(count int, prNumbers []int) error {
-	outputFile := os.Getenv("GITHUB_OUTPUT")
-	if outputFile == "" {
-		return nil
-	}
-
-	f, err := os.OpenFile(outputFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		return fmt.Errorf("failed to open GITHUB_OUTPUT: %w", err)
-	}
-	defer f.Close()
-
-	nums := make([]string, len(prNumbers))
-	for i, n := range prNumbers {
-		nums[i] = strconv.Itoa(n)
-	}
-
-	fmt.Fprintf(f, "pr_count=%d\n", count)
-	fmt.Fprintf(f, "pr_numbers=%s\n", strings.Join(nums, ","))
 	return nil
 }
 

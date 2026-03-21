@@ -116,13 +116,6 @@ jobs:
 | `token` | Yes | Fine-grained PAT (see above) |
 | `version` | No | Version of ghsummon to install (default: latest) |
 
-### Action Outputs
-
-| Output | Description |
-|--------|-------------|
-| `pr_count` | Number of PRs created |
-| `pr_numbers` | Comma-separated list of created PR numbers |
-
 ## Exclusion Control
 
 ghsummon uses branch-name-based exclusion. For each file with an `@copilot` directive, a branch named `ghsummon-<filepath>` is created. If the branch already exists, the file is skipped (work already in progress). Once the PR is merged and the branch is deleted, the same file can be processed again.
