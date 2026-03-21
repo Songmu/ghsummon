@@ -55,7 +55,7 @@ func detectChangedFiles(ctx context.Context, baseSHA string) ([]changedFile, err
 	if err != nil {
 		return nil, fmt.Errorf("git diff failed: %w", err)
 	}
-	return parseDiffOutput(string(out)), nil
+	return parseDiffOutput(string(out))
 }
 
 // unquotePath handles git's quoting of filenames with non-ASCII or special characters.
@@ -102,11 +102,14 @@ func parseHunkHeader(line string) (start, count int, ok bool) {
 }
 
 // parseDiffOutput parses unified diff output and extracts changed files with added lines.
-func parseDiffOutput(diffOutput string) []changedFile {
+func parseDiffOutput(diffOutput string) ([]changedFile, error) {
 	var files []changedFile
 	var current *changedFile
 
 	scanner := bufio.NewScanner(strings.NewReader(diffOutput))
+	// Allow up to 10 MiB per line to handle large diffs without silent truncation.
+	const maxScanTokenSize = 10 * 1024 * 1024
+	scanner.Buffer(make([]byte, bufio.MaxScanTokenSize), maxScanTokenSize)
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -142,7 +145,10 @@ func parseDiffOutput(diffOutput string) []changedFile {
 	if current != nil {
 		files = append(files, *current)
 	}
-	return files
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("scanning diff output: %w", err)
+	}
+	return files, nil
 }
 
 // detectPrompts runs the full detection pipeline: shallow deepen, diff, and parse prompts.

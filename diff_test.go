@@ -143,7 +143,10 @@ index 1234567..0000000
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := parseDiffOutput(tt.input)
+			got, err := parseDiffOutput(tt.input)
+			if err != nil {
+				t.Fatalf("parseDiffOutput() unexpected error: %v", err)
+			}
 			if !reflect.DeepEqual(got, tt.expected) {
 				t.Errorf("parseDiffOutput() = %+v, want %+v", got, tt.expected)
 			}
