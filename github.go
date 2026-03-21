@@ -54,7 +54,7 @@ func (g *ghClient) branchExists(ctx context.Context, branch string) (bool, error
 
 // createEmptyCommitAndBranch creates an empty commit on a new branch via Git Data API.
 func (g *ghClient) createEmptyCommitAndBranch(ctx context.Context, baseBranch, branch, message string) error {
-	// Get default branch HEAD ref
+	// Get base branch HEAD ref
 	defaultRef, _, err := g.client.Git.GetRef(ctx, g.owner, g.repo, "refs/heads/"+baseBranch)
 	if err != nil {
 		return fmt.Errorf("failed to get HEAD ref: %w", err)
