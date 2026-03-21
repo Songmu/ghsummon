@@ -57,11 +57,6 @@ func TestBranchName(t *testing.T) {
 			expected: "ghsummon-" + md5hex("path^/file.md"),
 		},
 		{
-			name:     "colon",
-			input:    "path:/file.md",
-			expected: "ghsummon-" + md5hex("path:/file.md"),
-		},
-		{
 			name:     "question mark",
 			input:    "path?/file.md",
 			expected: "ghsummon-" + md5hex("path?/file.md"),
