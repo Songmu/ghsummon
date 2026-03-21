@@ -85,6 +85,30 @@ For GitHub Actions, create a **fine-grained PAT** with these repository permissi
 
 Store it as `secrets.GHSUMMON_TOKEN` in your repository settings.
 
+### Minimal `copilot-setup-steps.yml`
+
+Copilot Coding Agent requires this workflow to exist in the repository. See [docs](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment).
+
+```yaml
+name: "Copilot Setup Steps"
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+```
+
 ### Action Inputs
 
 | Input | Required | Description |
