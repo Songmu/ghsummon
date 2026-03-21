@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -11,10 +12,13 @@ const branchPrefix = "ghsummon-"
 
 // BranchName returns the ghsummon branch name for the given file path.
 func BranchName(filePath string) string {
-	// Clean and normalize the path using forward-slash semantics so behaviour
-	// is identical on all platforms (filepath.Clean is OS-specific and would
-	// convert backslashes on Windows before we can detect them as unsafe).
-	normalized := path.Clean(filePath)
+	// Normalize path separators to forward slashes for consistent branch names
+	// across operating systems. filepath.ToSlash converts OS-native separators
+	// (e.g. backslashes on Windows) to "/", and the explicit ReplaceAll ensures
+	// any remaining backslashes are also converted on systems where
+	// filepath.ToSlash is a no-op (e.g. Linux). path.Clean then resolves ".",
+	// "..", and redundant separators using forward-slash semantics.
+	normalized := strings.ReplaceAll(path.Clean(filepath.ToSlash(filePath)), `\`, "/")
 
 	// If unsafe characters are present, replace with MD5 hash
 	if hasUnsafeChars(normalized) {
@@ -35,7 +39,7 @@ func hasUnsafeChars(s string) bool {
 			return true
 		}
 		switch r {
-		case ' ', '~', '^', ':', '?', '*', '[', '\\':
+		case ' ', '~', '^', ':', '?', '*', '[':
 			return true
 		}
 	}
