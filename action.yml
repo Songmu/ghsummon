@@ -1,6 +1,6 @@
-name: ghsummon
+name: "ghsummon - Summon Copilot Coding Agent"
 author: Songmu
-description: install and run the ghsummon
+description: Summon Copilot Coding Agent from inline @copilot directives
 inputs:
   version:
     description: "A version to install ghsummon"
@@ -26,5 +26,5 @@ runs:
       GHSUMMON_VERSION: ${{ inputs.version }}
       GITHUB_TOKEN: ${{ inputs.token }}
 branding:
-  icon: 'git-pull-request' # tentative, should be changed
+  icon: 'send'
   color: 'blue'
