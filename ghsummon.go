@@ -60,12 +60,17 @@ func run(ctx context.Context, outStream, errStream io.Writer) error {
 		return nil
 	}
 
-	gh, err := newGHClient(ctx, token, ownerRepo)
-	if err != nil {
-		return err
+	// Determine base branch: GITHUB_REF_NAME (Actions) or current git branch (local)
+	baseBranch := os.Getenv("GITHUB_REF_NAME")
+	if baseBranch == "" {
+		var err error
+		baseBranch, err = currentBranch(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to determine base branch: %w", err)
+		}
 	}
 
-	defaultBranch, err := gh.getDefaultBranch(ctx)
+	gh, err := newGHClient(ctx, token, ownerRepo)
 	if err != nil {
 		return err
 	}
@@ -91,7 +96,7 @@ func run(ctx context.Context, outStream, errStream io.Writer) error {
 
 		// Create empty commit and branch
 		commitMsg := fmt.Sprintf("ghsummon: %s", filePath)
-		if err := gh.createEmptyCommitAndBranch(ctx, defaultBranch, branch, commitMsg); err != nil {
+		if err := gh.createEmptyCommitAndBranch(ctx, baseBranch, branch, commitMsg); err != nil {
 			return err
 		}
 		log.Printf("created branch: %s\n", branch)
@@ -106,7 +111,7 @@ func run(ctx context.Context, outStream, errStream io.Writer) error {
 		}
 
 		// Create PR
-		prNumber, prNodeID, err := gh.createPR(ctx, defaultBranch, branch, prTitle, prBody)
+		prNumber, prNodeID, err := gh.createPR(ctx, baseBranch, branch, prTitle, prBody)
 		if err != nil {
 			return err
 		}
