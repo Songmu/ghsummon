@@ -3,8 +3,6 @@ package ghsummon
 import (
 	"crypto/md5"
 	"fmt"
-	"path/filepath"
-	"runtime"
 	"testing"
 )
 
@@ -34,16 +32,9 @@ func TestBranchName(t *testing.T) {
 			expected: "ghsummon-README.md",
 		},
 		{
-			name:  "windows-style path separator",
-			input: `notes\memo.md`,
-			// On Windows, filepath.Clean+ToSlash converts \ to /, yielding a safe branch name.
-			// On other OSes, \ is not a path separator, so it remains and is treated as unsafe.
-			expected: func() string {
-				if runtime.GOOS == "windows" {
-					return "ghsummon-notes/memo.md"
-				}
-				return "ghsummon-" + md5hex(`notes\memo.md`)
-			}(),
+			name:     "windows-style path separator",
+			input:    `notes\memo.md`,
+			expected: "ghsummon-notes/memo.md", // backslash is normalized to / on all OSes
 		},
 		{
 			name:     "japanese characters",
@@ -116,16 +107,9 @@ func TestBranchName(t *testing.T) {
 			expected: "ghsummon-path/dir", // filepath.Clean removes trailing slash
 		},
 		{
-			name:  "dot-slash with windows separator",
-			input: `./notes\memo.md`,
-			// On Windows, filepath.Clean+ToSlash resolves .\ and converts \ to /.
-			// On other OSes, \ is not a path separator and remains, making it unsafe.
-			expected: func() string {
-				if runtime.GOOS == "windows" {
-					return "ghsummon-notes/memo.md"
-				}
-				return "ghsummon-" + md5hex(filepath.ToSlash(filepath.Clean(`./notes\memo.md`)))
-			}(),
+			name:     "dot-slash with windows separator",
+			input:    `./notes\memo.md`,
+			expected: "ghsummon-notes/memo.md", // backslash is normalized to / on all OSes
 		},
 	}
 
