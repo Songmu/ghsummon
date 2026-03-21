@@ -139,6 +139,25 @@ index 1234567..0000000
 				},
 			},
 		},
+		{
+			name: "new file (from dev/null)",
+			input: `diff --git a/new.md b/new.md
+new file mode 100644
+index 0000000..64e3d53
+--- /dev/null
++++ b/new.md
+@@ -0,0 +1,2 @@
++@copilot test prompt
++  continuation line
+`,
+			expected: []changedFile{
+				{
+					Path:             "new.md",
+					AddedLines:       []string{"@copilot test prompt", "  continuation line"},
+					AddedLineNumbers: []int{1, 2},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
