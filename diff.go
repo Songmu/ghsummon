@@ -14,6 +14,15 @@ import (
 // emptyTreeHash is the SHA of git's empty tree, used for diffing the initial commit.
 const emptyTreeHash = "4b825dc642cb6eb9a060e54bf899d15f13a88e14"
 
+// currentBranch returns the current git branch name.
+func currentBranch(ctx context.Context) (string, error) {
+	out, err := exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current branch: %w", err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 // detectShallowAndDeepen checks if the repo is a shallow clone and deepens it if needed.
 func detectShallowAndDeepen(ctx context.Context) error {
 	out, err := exec.CommandContext(ctx, "git", "rev-parse", "--is-shallow-repository").Output()

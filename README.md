@@ -11,14 +11,14 @@ ghsummon
 [license]: https://github.com/Songmu/ghsummon/blob/main/LICENSE
 [PkgGoDev]: https://pkg.go.dev/github.com/Songmu/ghsummon
 
-**ghsummon** detects `@copilot <prompt>` directives in files (primarily Markdown), then automatically creates a Pull Request and summons [GitHub Copilot Coding Agent](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent) to work on it — all driven by a simple push to your default branch.
+**ghsummon** detects `@copilot <prompt>` directives in files (primarily Markdown), then automatically creates a Pull Request and summons [GitHub Copilot Coding Agent](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent) to work on it — all driven by a simple `git push`.
 
 ## How It Works
 
-1. Write `@copilot <prompt>` in a Markdown file and push to the default branch
+1. Write `@copilot <prompt>` in a Markdown file and push
 2. GitHub Actions runs ghsummon
 3. ghsummon detects the `@copilot` directive in the git diff
-4. A new branch and PR are created automatically
+4. A new branch and PR are created automatically (base = the pushed branch)
 5. Copilot Coding Agent is assigned and triggered via `@copilot` comment
 6. Copilot replaces the `@copilot` prompt with research results directly on the PR branch
 7. Review and merge the PR — the branch is deleted, allowing re-use

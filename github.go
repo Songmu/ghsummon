@@ -40,15 +40,6 @@ func newGHClient(ctx context.Context, token, ownerRepo string) (*ghClient, error
 	}, nil
 }
 
-// getDefaultBranch returns the repository's default branch name.
-func (g *ghClient) getDefaultBranch(ctx context.Context) (string, error) {
-	repo, _, err := g.client.Repositories.Get(ctx, g.owner, g.repo)
-	if err != nil {
-		return "", fmt.Errorf("failed to get repository info: %w", err)
-	}
-	return repo.GetDefaultBranch(), nil
-}
-
 func (g *ghClient) branchExists(ctx context.Context, branch string) (bool, error) {
 	ref := "refs/heads/" + branch
 	_, resp, err := g.client.Git.GetRef(ctx, g.owner, g.repo, ref)
