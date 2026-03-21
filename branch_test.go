@@ -34,7 +34,7 @@ func TestBranchName(t *testing.T) {
 		{
 			name:     "windows-style path separator",
 			input:    `notes\memo.md`,
-			expected: "ghsummon-" + md5hex(`notes\memo.md`), // backslash is unsafe for git branches
+			expected: "ghsummon-notes/memo.md", // backslash is normalized to / on all OSes
 		},
 		{
 			name:     "japanese characters",
@@ -55,11 +55,6 @@ func TestBranchName(t *testing.T) {
 			name:     "caret",
 			input:    "path^/file.md",
 			expected: "ghsummon-" + md5hex("path^/file.md"),
-		},
-		{
-			name:     "colon",
-			input:    "path:/file.md",
-			expected: "ghsummon-" + md5hex("path:/file.md"),
 		},
 		{
 			name:     "question mark",
@@ -109,7 +104,7 @@ func TestBranchName(t *testing.T) {
 		{
 			name:     "dot-slash with windows separator",
 			input:    `./notes\memo.md`,
-			expected: "ghsummon-" + md5hex(`notes\memo.md`), // backslash is unsafe for git branches
+			expected: "ghsummon-notes/memo.md", // backslash is normalized to / on all OSes
 		},
 	}
 

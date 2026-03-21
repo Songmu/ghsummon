@@ -11,9 +11,10 @@ const branchPrefix = "ghsummon-"
 
 // BranchName returns the ghsummon branch name for the given file path.
 func BranchName(filePath string) string {
-	// Clean and normalize the path
-	normalized := filepath.Clean(filePath)
-	normalized = filepath.ToSlash(normalized)
+	// Normalize the path using OS-native rules, then convert all path
+	// separators (including backslashes on non-Windows) to forward slashes.
+	// This ensures branch names are identical regardless of the OS.
+	normalized := strings.ReplaceAll(filepath.ToSlash(filepath.Clean(filePath)), `\`, "/")
 
 	// If unsafe characters are present, replace with MD5 hash
 	if hasUnsafeChars(normalized) {
@@ -34,7 +35,7 @@ func hasUnsafeChars(s string) bool {
 			return true
 		}
 		switch r {
-		case ' ', '~', '^', ':', '?', '*', '[', '\\':
+		case ' ', '~', '^', ':', '?', '*', '[':
 			return true
 		}
 	}
