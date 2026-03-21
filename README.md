@@ -126,7 +126,30 @@ ghsummon uses branch-name-based exclusion. For each file with an `@copilot` dire
 
 ## Similar solutions and inspirations
 
-@copilot Please look for tools or ideas similar to ghsummon!!
+Several tools and ideas share ghsummon's core theme of using natural-language directives or comments to automatically trigger AI agents that create GitHub Pull Requests.
+
+### GitHub Agentic Workflows
+
+The closest conceptual sibling is **GitHub Agentic Workflows** (technical preview, early 2026), a GitHub Next / Microsoft Research project. Like ghsummon, it lets you write automation intent in plain Markdown files rather than complex YAML. A YAML frontmatter section declares triggers, permissions, and "safe outputs", while the Markdown body is a natural-language prompt that a coding agent (Copilot, Claude, or Codex) interprets and executes—creating issues, comments, or PRs on your behalf.
+
+- [GitHub Blog: Automate repository tasks with GitHub Agentic Workflows](https://github.blog/ai-and-ml/automate-repository-tasks-with-github-agentic-workflows/)
+- [GitHub Agentic Workflows docs](https://github.github.com/gh-aw/)
+- [Awesome Copilot – Agentic Workflows examples](https://awesome-copilot.github.com/learning-hub/agentic-workflows/)
+
+### AI agents triggered by GitHub issues / comments
+
+These tools are triggered by assigning a GitHub issue to the agent or mentioning it in a comment, rather than by a push with a Markdown directive, but they solve a similar problem—automating the issue → PR lifecycle:
+
+| Tool | Trigger | Notes |
+|------|---------|-------|
+| **[Mentat](https://mentat.ai/docs)** | `@mentatbot` comment in issue or PR | GitHub App; iterates on review feedback |
+| **[SWE-agent](https://swe-agent.com/)** (Princeton NLP, open source) | CLI / API given a GitHub issue URL | Turns any LLM (GPT-4, Claude, etc.) into an autonomous coder; ~12% resolution on SWE-bench |
+| **[AutoCodeRover](https://github.com/AutoCodeRoverSG/auto-code-rover)** (open source) | CLI / API given a GitHub issue URL | Uses AST + fault localization for smart patching; ~16% on SWE-bench, ~$0.43/task |
+| **[Devin](https://cognition.ai/blog/devin-101-automatic-pr-reviews-with-the-devin-api)** (Cognition Labs) | GitHub Action / API per PR | Commercial; focuses on PR review and implementation at scale |
+
+### GitHub Action: Generate PR with AI
+
+**[Generate PR with AI](https://github.com/marketplace/actions/generate-pr-with-ai)** is a GitHub Marketplace Action that converts GitHub issues into working PRs by invoking LLM-based coding agents (Aider, Codex CLI, Claude Code, Gemini CLI). Multiple agents can run in parallel and the best result is picked—complementary to ghsummon's single-agent, push-triggered flow.
 
 
 ## Author
