@@ -6,6 +6,10 @@ inputs:
     description: "A version to install ghsummon"
     required: false
     default: "v0.0.0"
+  token:
+    description: "GitHub token used for API calls and git operations (e.g. git fetch). Defaults to the built-in GITHUB_TOKEN."
+    required: false
+    default: ${{ github.token }}
 runs:
   using: "composite"
   steps:
@@ -21,6 +25,7 @@ runs:
     env:
       ACTION_REF: ${{ github.action_ref }}
       GHSUMMON_VERSION: ${{ inputs.version }}
+      GITHUB_TOKEN: ${{ inputs.token }}
 branding:
-  icon: 'git-pull-request' # tentavive should be changed
+  icon: 'git-pull-request' # tentative, should be changed
   color: 'blue'

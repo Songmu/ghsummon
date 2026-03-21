@@ -3,6 +3,7 @@ package ghsummon
 import (
 	"bufio"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"os/exec"
@@ -21,6 +22,18 @@ func detectShallowAndDeepen(ctx context.Context) error {
 	cmd := exec.CommandContext(ctx, "git", "fetch", "--deepen=1")
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// configureGitToken sets up git to use the given token for HTTPS authentication
+// to github.com. This matches what actions/checkout does and ensures operations
+// like `git fetch` succeed even when persist-credentials is not set.
+func configureGitToken(ctx context.Context, token string) error {
+	// Encode as "x-access-token:<token>" in base64 for HTTP basic auth.
+	encoded := base64.StdEncoding.EncodeToString([]byte("x-access-token:" + token))
+	cmd := exec.CommandContext(ctx, "git", "config", "--global",
+		"http.https://github.com/.extraheader",
+		"AUTHORIZATION: basic "+encoded)
 	return cmd.Run()
 }
 

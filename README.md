@@ -59,16 +59,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with:
-          persist-credentials: false
       - uses: actions/create-github-app-token@v2
         id: app-token
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: Songmu/ghsummon@v0
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 ```
 
 ### Prerequisites
@@ -109,6 +107,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 ```
+
+### Action Inputs
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `token` | No | `github.token` | GitHub token used for API calls and git operations |
+| `version` | No | `v0.0.0` | Version of ghsummon to install |
 
 ### Action Outputs
 

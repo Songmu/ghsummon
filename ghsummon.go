@@ -35,6 +35,12 @@ func run(ctx context.Context, outStream, errStream io.Writer) error {
 	if token == "" {
 		return fmt.Errorf("GITHUB_TOKEN is not set")
 	}
+
+	// Configure git to use the token for HTTPS operations (e.g. git fetch).
+	if err := configureGitToken(ctx, token); err != nil {
+		return fmt.Errorf("failed to configure git auth: %w", err)
+	}
+
 	ownerRepo := os.Getenv("GITHUB_REPOSITORY")
 	if ownerRepo == "" {
 		return fmt.Errorf("GITHUB_REPOSITORY is not set")
