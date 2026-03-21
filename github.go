@@ -219,6 +219,7 @@ func (g *ghClient) graphql(ctx context.Context, query string, variables map[stri
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("GraphQL-Features", "issues_copilot_assignment_api_support")
 
 	resp, err := g.httpClient.Do(req)
 	if err != nil {
