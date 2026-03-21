@@ -3,6 +3,8 @@ package ghsummon
 import (
 	"crypto/md5"
 	"fmt"
+	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -32,9 +34,16 @@ func TestBranchName(t *testing.T) {
 			expected: "ghsummon-README.md",
 		},
 		{
-			name:     "windows-style path separator",
-			input:    `notes\memo.md`,
-			expected: "ghsummon-notes/memo.md", // backslash is treated as path separator and normalized to /
+			name:  "windows-style path separator",
+			input: `notes\memo.md`,
+			// On Windows, filepath.Clean+ToSlash converts \ to /, yielding a safe branch name.
+			// On other OSes, \ is not a path separator, so it remains and is treated as unsafe.
+			expected: func() string {
+				if runtime.GOOS == "windows" {
+					return "ghsummon-notes/memo.md"
+				}
+				return "ghsummon-" + md5hex(`notes\memo.md`)
+			}(),
 		},
 		{
 			name:     "japanese characters",
@@ -79,7 +88,7 @@ func TestBranchName(t *testing.T) {
 		{
 			name:     "double dot",
 			input:    "path/../file.md",
-			expected: "ghsummon-file.md", // path.Clean resolves ..
+			expected: "ghsummon-file.md", // filepath.Clean resolves ..
 		},
 		{
 			name:     "ends with .lock",
@@ -104,12 +113,19 @@ func TestBranchName(t *testing.T) {
 		{
 			name:     "ends with slash",
 			input:    "path/dir/",
-			expected: "ghsummon-path/dir", // path.Clean removes trailing slash
+			expected: "ghsummon-path/dir", // filepath.Clean removes trailing slash
 		},
 		{
-			name:     "dot-slash with windows separator",
-			input:    `./notes\memo.md`,
-			expected: "ghsummon-notes/memo.md", // backslash treated as separator and normalized to /
+			name:  "dot-slash with windows separator",
+			input: `./notes\memo.md`,
+			// On Windows, filepath.Clean+ToSlash resolves .\ and converts \ to /.
+			// On other OSes, \ is not a path separator and remains, making it unsafe.
+			expected: func() string {
+				if runtime.GOOS == "windows" {
+					return "ghsummon-notes/memo.md"
+				}
+				return "ghsummon-" + md5hex(filepath.ToSlash(filepath.Clean(`./notes\memo.md`)))
+			}(),
 		},
 	}
 
