@@ -32,7 +32,8 @@ func detectShallowAndDeepen(ctx context.Context) error {
 func configureGitToken(ctx context.Context, token string) error {
 	// Encode as "x-access-token:<token>" in base64 for HTTP basic auth.
 	encoded := base64.StdEncoding.EncodeToString([]byte("x-access-token:" + token))
-	cmd := exec.CommandContext(ctx, "git", "config", "--global",
+	fmt.Printf("::add-mask::%s\n", encoded)
+	cmd := exec.CommandContext(ctx, "git", "config", "--local",
 		"http.https://github.com/.extraheader",
 		"AUTHORIZATION: basic "+encoded)
 	return cmd.Run()
