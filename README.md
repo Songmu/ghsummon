@@ -110,7 +110,7 @@ jobs:
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `token` | No | `github.token` | GitHub token used for API calls and git operations |
+| `token` | Yes | `github.token` | GitHub token used for API calls and git operations |
 | `version` | No | `v0.0.0` | Version of ghsummon to install |
 
 ### Action Outputs
@@ -123,10 +123,6 @@ jobs:
 ## Exclusion Control
 
 ghsummon uses branch-name-based exclusion. For each file with an `@copilot` directive, a branch named `ghsummon-<filepath>` is created. If the branch already exists, the file is skipped (work already in progress). Once the PR is merged and the branch is deleted, the same file can be processed again.
-
-## Similar solutions and inspirations
-
-@copilot Please look for tools or ideas similar to ghsummon!!
 
 
 ## Author
