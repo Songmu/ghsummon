@@ -1,0 +1,42 @@
+name: ghsummon
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  ghsummon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@df432e13a1e41244a83daa3a073cc55d3858a4a0 # v2.0.6
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version: stable
+
+      - name: Build and Run ghsummon
+        run: |
+          go build -o ghsummon ./cmd/ghsummon
+          ./ghsummon
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
