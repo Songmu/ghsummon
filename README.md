@@ -127,21 +127,10 @@ jobs:
 
 ghsummon uses branch-name-based exclusion. For each file with an `@copilot` directive, a branch named `ghsummon-<filepath>` is created. If the branch already exists, the file is skipped (work already in progress). Once the PR is merged and the branch is deleted, the same file can be processed again.
 
-## Installation
+## Similar solutions and inspirations
 
-```console
-# Install the latest version. (Install it into ./bin/ by default).
-% curl -sfL https://raw.githubusercontent.com/Songmu/ghsummon/main/install.sh | sh -s
+@copilot Please look for tools or ideas similar to ghsummon.
 
-# Specify installation directory ($(go env GOPATH)/bin/) and version.
-% curl -sfL https://raw.githubusercontent.com/Songmu/ghsummon/main/install.sh | sh -s -- -b $(go env GOPATH)/bin [vX.Y.Z]
-
-# In alpine linux (as it does not come with curl by default)
-% wget -O - -q https://raw.githubusercontent.com/Songmu/ghsummon/main/install.sh | sh -s [vX.Y.Z]
-
-# go install
-% go install github.com/Songmu/ghsummon/cmd/ghsummon@latest
-```
 
 ## Author
 
