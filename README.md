@@ -60,14 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/create-github-app-token@v2
-        id: app-token
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: Songmu/ghsummon@v0
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ secrets.GHSUMMON_TOKEN }}
 ```
 
 ### Prerequisites
@@ -79,13 +74,16 @@ jobs:
 
 ### Token Requirements
 
-| Method | Required Permissions |
-|--------|---------------------|
-| **GitHub App Token** (recommended) | `issues: write`, `pull_requests: write`, `contents: write` |
-| **PAT (fine-grained)** | `issues:write`, `pull_requests:write`, `contents:write` |
-| **`GITHUB_TOKEN`** | ⚠️ May not trigger Copilot due to recursive workflow prevention |
+A **fine-grained PAT** is required for Copilot Coding Agent assignment. GitHub App installation tokens cannot assign Copilot to PRs ([cli/cli#11362](https://github.com/cli/cli/issues/11362)).
 
-> **Recommendation**: Use a [GitHub App token](https://github.com/marketplace/actions/create-github-app-token) via `actions/create-github-app-token` for reliable Copilot triggering.
+Create a fine-grained PAT with these repository permissions:
+- `Contents`: Read and Write
+- `Issues`: Read and Write
+- `Pull requests`: Read and Write
+
+Store it as `secrets.GHSUMMON_TOKEN` in your repository settings.
+
+> ⚠️ `GITHUB_TOKEN` cannot trigger Copilot due to recursive workflow prevention. GitHub App installation tokens cannot assign the Copilot agent as an assignee.
 
 ### Minimal `copilot-setup-steps.yml`
 
