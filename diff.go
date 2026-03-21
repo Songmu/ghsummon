@@ -27,12 +27,14 @@ func detectShallowAndDeepen(ctx context.Context) error {
 }
 
 // configureGitToken sets up git to use the given token for HTTPS authentication
-// to github.com. This matches what actions/checkout does and ensures operations
-// like `git fetch` succeed even when persist-credentials is not set.
+// to github.com. This ensures operations like `git fetch` succeed.
+// We use --local so that this entry replaces the one actions/checkout writes to
+// the local config (persist-credentials: true by default). Using --global would
+// add a second Authorization header alongside the local one, causing HTTP 400.
 func configureGitToken(ctx context.Context, token string) error {
 	// Encode as "x-access-token:<token>" in base64 for HTTP basic auth.
 	encoded := base64.StdEncoding.EncodeToString([]byte("x-access-token:" + token))
-	cmd := exec.CommandContext(ctx, "git", "config", "--global",
+	cmd := exec.CommandContext(ctx, "git", "config", "--local",
 		"http.https://github.com/.extraheader",
 		"AUTHORIZATION: basic "+encoded)
 	return cmd.Run()
