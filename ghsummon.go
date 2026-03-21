@@ -109,16 +109,17 @@ func run(ctx context.Context, outStream, errStream io.Writer) error {
 		}
 
 		// Create PR
-		prNumber, err := gh.createPR(ctx, defaultBranch, branch, prTitle, prBody)
+		prNumber, prNodeID, err := gh.createPR(ctx, defaultBranch, branch, prTitle, prBody)
 		if err != nil {
 			return err
 		}
 		log.Printf("created PR #%d for %s\n", prNumber, filePath)
 
-		// Assign copilot
-		if err := gh.assignCopilot(ctx, prNumber); err != nil {
+		// Assign copilot via GraphQL
+		if err := gh.assignCopilot(ctx, prNodeID); err != nil {
 			return err
 		}
+		log.Printf("assigned copilot to PR #%d\n", prNumber)
 
 		// Post @copilot comment
 		if err := gh.postCopilotComment(ctx, prNumber, comment); err != nil {
