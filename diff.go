@@ -110,11 +110,11 @@ func unquotePath(p string) string {
 // for the new file side.
 func parseHunkHeader(line string) (start, count int, ok bool) {
 	// Format: @@ -l,s +l,s @@ optional section heading
-	plusIdx := strings.Index(line, "+")
-	if plusIdx < 0 {
+	_, after, ok0 := strings.Cut(line, "+")
+	if !ok0 {
 		return 0, 0, false
 	}
-	rest := line[plusIdx+1:]
+	rest := after
 	endIdx := strings.Index(rest, " @@")
 	if endIdx < 0 {
 		// Try just "@@"
@@ -169,7 +169,7 @@ func parseDiffOutput(diffOutput string) ([]changedFile, error) {
 		if current != nil && strings.HasPrefix(line, "@@ ") {
 			start, count, ok := parseHunkHeader(line)
 			if ok {
-				for i := 0; i < count; i++ {
+				for i := range count {
 					current.AddedLineNumbers = append(current.AddedLineNumbers, start+i)
 				}
 			}

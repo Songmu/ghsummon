@@ -80,9 +80,9 @@ func (g *ghClient) createEmptyCommitAndBranch(ctx context.Context, baseBranch, b
 	// Create an empty commit (same tree = no file changes)
 	newCommit, _, err := g.client.Git.CreateCommit(ctx, g.owner, g.repo,
 		&github.Commit{
-			Message: github.Ptr(message),
-			Tree:    &github.Tree{SHA: github.Ptr(treeSHA)},
-			Parents: []*github.Commit{{SHA: github.Ptr(headSHA)}},
+			Message: new(message),
+			Tree:    &github.Tree{SHA: new(treeSHA)},
+			Parents: []*github.Commit{{SHA: new(headSHA)}},
 		}, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create commit: %w", err)
@@ -91,7 +91,7 @@ func (g *ghClient) createEmptyCommitAndBranch(ctx context.Context, baseBranch, b
 	// Create the branch
 	ref := "refs/heads/" + branch
 	_, _, err = g.client.Git.CreateRef(ctx, g.owner, g.repo, &github.Reference{
-		Ref:    github.Ptr(ref),
+		Ref:    new(ref),
 		Object: &github.GitObject{SHA: newCommit.SHA},
 	})
 	if err != nil {
@@ -104,10 +104,10 @@ func (g *ghClient) createEmptyCommitAndBranch(ctx context.Context, baseBranch, b
 // createPR creates a pull request and returns its number and node ID.
 func (g *ghClient) createPR(ctx context.Context, baseBranch, branch, title, body string) (int, string, error) {
 	pr, _, err := g.client.PullRequests.Create(ctx, g.owner, g.repo, &github.NewPullRequest{
-		Title: github.Ptr(title),
-		Head:  github.Ptr(branch),
-		Base:  github.Ptr(baseBranch),
-		Body:  github.Ptr(body),
+		Title: new(title),
+		Head:  new(branch),
+		Base:  new(baseBranch),
+		Body:  new(body),
 	})
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to create PR: %w", err)
@@ -283,7 +283,7 @@ func (g *ghClient) graphql(ctx context.Context, query string, variables map[stri
 // postCopilotComment posts an @copilot comment on the PR to trigger the Coding Agent.
 func (g *ghClient) postCopilotComment(ctx context.Context, prNumber int, comment string) error {
 	_, _, err := g.client.Issues.CreateComment(ctx, g.owner, g.repo, prNumber, &github.IssueComment{
-		Body: github.Ptr(comment),
+		Body: new(comment),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to post comment on PR #%d: %w", prNumber, err)
