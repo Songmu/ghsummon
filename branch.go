@@ -3,7 +3,7 @@ package ghsummon
 import (
 	"crypto/md5"
 	"fmt"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -11,9 +11,12 @@ const branchPrefix = "ghsummon-"
 
 // BranchName returns the ghsummon branch name for the given file path.
 func BranchName(filePath string) string {
-	// Clean and normalize the path
-	normalized := filepath.Clean(filePath)
-	normalized = filepath.ToSlash(normalized)
+	// Clean and normalize the path using the platform-independent path package.
+	// Using path.Clean (not filepath.Clean) ensures consistent cross-platform behavior:
+	// on Windows, filepath.Clean treats '\' as a path separator and converts all
+	// separators to '\', while path.Clean always uses '/' as the only separator,
+	// keeping '\' as a literal character that will be detected as unsafe.
+	normalized := path.Clean(filePath)
 
 	// If unsafe characters are present, replace with MD5 hash
 	if hasUnsafeChars(normalized) {
