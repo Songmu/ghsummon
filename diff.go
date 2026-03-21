@@ -32,24 +32,47 @@ type changedFile struct {
 }
 
 // resolveBaseSHA returns the base SHA for diffing.
-// If baseSHA is provided, use it. Otherwise try HEAD~1, falling back to empty tree.
-func resolveBaseSHA(ctx context.Context, baseSHA string) string {
+// If baseSHA is provided, use it. Otherwise try HEAD~1; if that fails, attempt to
+// deepen a shallow clone and retry, and only fall back to the empty tree when this
+// is truly the initial commit. If the base cannot be resolved, an error is returned.
+func resolveBaseSHA(ctx context.Context, baseSHA string) (string, error) {
 	if baseSHA != "" {
-		return baseSHA
+		return baseSHA, nil
 	}
+
 	// Try HEAD~1
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--verify", "HEAD~1")
 	out, err := cmd.Output()
 	if err == nil {
-		return strings.TrimSpace(string(out))
+		return strings.TrimSpace(string(out)), nil
 	}
-	// Initial commit — no parent
-	return emptyTreeHash
+
+	// If resolving HEAD~1 failed, we may be in a shallow clone. Try to deepen.
+	if derr := detectShallowAndDeepen(ctx); derr == nil {
+		cmd = exec.CommandContext(ctx, "git", "rev-parse", "--verify", "HEAD~1")
+		out, err = cmd.Output()
+		if err == nil {
+			return strings.TrimSpace(string(out)), nil
+		}
+	}
+
+	// As a final check, see if this is truly the initial commit (a repository with
+	// exactly one commit). In that case we diff against the empty tree.
+	countCmd := exec.CommandContext(ctx, "git", "rev-list", "--count", "HEAD")
+	countOut, countErr := countCmd.Output()
+	if countErr == nil && strings.TrimSpace(string(countOut)) == "1" {
+		return emptyTreeHash, nil
+	}
+
+	return "", fmt.Errorf("failed to resolve base SHA: %w", err)
 }
 
 // detectChangedFiles runs git diff and returns the list of changed files with their added lines.
 func detectChangedFiles(ctx context.Context, baseSHA string) ([]changedFile, error) {
-	base := resolveBaseSHA(ctx, baseSHA)
+	base, err := resolveBaseSHA(ctx, baseSHA)
+	if err != nil {
+		return nil, err
+	}
 	cmd := exec.CommandContext(ctx, "git", "diff", base, "HEAD", "-U0")
 	out, err := cmd.Output()
 	if err != nil {
