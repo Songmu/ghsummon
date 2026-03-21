@@ -1,0 +1,26 @@
+name: ghsummon
+author: Songmu
+description: install and run the ghsummon
+inputs:
+  version:
+    description: "A version to install ghsummon"
+    required: false
+    default: "v0.0.0"
+runs:
+  using: "composite"
+  steps:
+  - name: ghsummon
+    id: ghsummon
+    run: |
+      cd "${GITHUB_WORKSPACE}" || exit 1
+      TEMP_PATH="$(mktemp -d)"
+      PATH="${TEMP_PATH}:$PATH"
+      curl -sfL "https://raw.githubusercontent.com/Songmu/ghsummon/${ACTION_REF}/install.sh" | sh -s -- -b "$TEMP_PATH" "$GHSUMMON_VERSION" 2>&1
+      ghsummon
+    shell: bash
+    env:
+      ACTION_REF: ${{ github.action_ref }}
+      GHSUMMON_VERSION: ${{ inputs.version }}
+branding:
+  icon: 'git-pull-request' # tentavive should be changed
+  color: 'blue'
