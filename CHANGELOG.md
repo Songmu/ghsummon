@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.0.2](https://github.com/Songmu/ghsummon/compare/v0.0.1...v0.0.2) - 2026-03-21
+- go fix ./... by @Songmu in https://github.com/Songmu/ghsummon/pull/22
+- Remove user lookup fallback for Copilot agent ID by @Songmu in https://github.com/Songmu/ghsummon/pull/23
+- Use current branch as PR base instead of repository default branch by @Songmu in https://github.com/Songmu/ghsummon/pull/24
+- Fix token masking by @Songmu in https://github.com/Songmu/ghsummon/pull/25
+
 ## [v0.0.1](https://github.com/Songmu/ghsummon/commits/v0.0.1) - 2026-03-21
 - Fix parseDiffOutput: larger scanner buffer and propagate scan errors by @Copilot in https://github.com/Songmu/ghsummon/pull/4
 - Implement core logic for @copilot prompt detection and PR creation by @Songmu in https://github.com/Songmu/ghsummon/pull/2
