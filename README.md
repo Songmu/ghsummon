@@ -1,7 +1,17 @@
 ghsummon
 =======
 
-@copilot Who is @Songmu?
+**Songmu** is the online handle of **Masayuki Matsuki**, a prominent Japanese software engineer and prolific open-source contributor.
+
+- Currently serving as Chief Engineer at [Henry, Inc.](https://henry.jp/), working on modern electronic medical record systems
+- Previously worked as CTO at Nature (IoT/energy), principal software engineer at Launchable, and as a key engineer behind [Mackerel](https://mackerel.io/) at Hatena
+- Three-time winner of [ISUCON](https://isucon.net/), a well-known Japanese programming efficiency contest
+- Skilled primarily in Go and Perl, focused on web application development and DevOps practices
+- Has released over 150 libraries on GitHub, including popular tools such as [tagpr](https://github.com/Songmu/tagpr), [horenso](https://github.com/Songmu/horenso), and [ghsummon](https://github.com/Songmu/ghsummon)
+- Co-maintainer of widely used tools like [ghq](https://github.com/x-motemen/ghq)
+- Active as a technical consultant, advisor, and writer on engineering management and OSS
+
+**Sources**: [GitHub profile](https://github.com/Songmu) · [Personal site](https://song.mu/) · [GitHub Sponsors](https://github.com/sponsors/Songmu/) · [Hatena Developer Blog](https://developer.hatenastaff.com/entry/2023/04/27/160000)
 
 [![Test Status](https://github.com/Songmu/ghsummon/actions/workflows/test.yaml/badge.svg?branch=main)][actions]
 [![Coverage Status](https://codecov.io/gh/Songmu/ghsummon/branch/main/graph/badge.svg)][codecov]
