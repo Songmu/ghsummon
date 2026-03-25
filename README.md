@@ -1,6 +1,8 @@
 ghsummon
 =======
 
+@copilot Who is @Songmu?
+
 [![Test Status](https://github.com/Songmu/ghsummon/actions/workflows/test.yaml/badge.svg?branch=main)][actions]
 [![Coverage Status](https://codecov.io/gh/Songmu/ghsummon/branch/main/graph/badge.svg)][codecov]
 [![MIT License](https://img.shields.io/github/license/Songmu/ghsummon)][license]
