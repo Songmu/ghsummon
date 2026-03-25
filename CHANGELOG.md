@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.0.3](https://github.com/Songmu/ghsummon/compare/v0.0.2...v0.0.3) - 2026-03-25
+- Add test case for new file detection in diff parser by @Songmu in https://github.com/Songmu/ghsummon/pull/26
+
 ## [v0.0.2](https://github.com/Songmu/ghsummon/compare/v0.0.1...v0.0.2) - 2026-03-21
 - go fix ./... by @Songmu in https://github.com/Songmu/ghsummon/pull/22
 - Remove user lookup fallback for Copilot agent ID by @Songmu in https://github.com/Songmu/ghsummon/pull/23
