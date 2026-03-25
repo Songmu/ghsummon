@@ -5,7 +5,7 @@ inputs:
   version:
     description: "A version to install ghsummon"
     required: false
-    default: "v0.0.2"
+    default: "v0.0.3"
   token:
     description: "GitHub token for API calls and git operations. A fine-grained PAT with contents:write and pull_requests:write is required for Copilot agent assignment."
     required: true
