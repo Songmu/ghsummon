@@ -58,7 +58,7 @@ jobs:
   research:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: Songmu/ghsummon@v0
         with:
           token: ${{ secrets.GHSUMMON_TOKEN }}
@@ -106,7 +106,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 ```
 
 ### Action Inputs
